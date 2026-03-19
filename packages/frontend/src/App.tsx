@@ -92,7 +92,7 @@ function QidInput({
           cursor: loading ? 'not-allowed' : 'pointer',
         }}
       >
-        {loading ? 'Analysing...' : 'Analyse'}
+        {loading ? 'Analyzing...' : 'Analyze'}
       </button>
     </form>
   );

@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w packages/types && npm run build -w packages/backend && npm run build -w packages/frontend",
     "dev": "concurrently \"npm run dev -w packages/backend\" \"npm run dev -w packages/frontend\"",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
