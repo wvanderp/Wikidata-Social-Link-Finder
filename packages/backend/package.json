@@ -1,0 +1,29 @@
+{
+  "name": "@wikidata-slf/backend",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "start": "node dist/server.js",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@wikidata-slf/types": "*",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "iwf": "^3.0.3",
+    "p-limit": "^3.1.0",
+    "puppeteer": "^24.40.0",
+    "social-profile-url-parser": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  }
+}

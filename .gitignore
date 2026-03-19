@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+packages/*/dist/
+packages/frontend/dist/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Puppeteer cache
+.cache/puppeteer/
