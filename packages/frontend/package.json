@@ -10,9 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@wikidata-slf/types": "*",
+    "@wikidata-slf/types": "workspace:*",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "social-profile-url-parser": "^2.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

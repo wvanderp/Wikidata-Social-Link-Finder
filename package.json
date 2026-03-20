@@ -2,20 +2,21 @@
   "name": "wikidata-social-link-finder",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
+  "packageManager": "pnpm@10.6.5",
   "scripts": {
-    "build": "npm run build -w packages/types && npm run build -w packages/backend && npm run build -w packages/frontend",
-    "dev": "concurrently \"npm run dev -w packages/backend\" \"npm run dev -w packages/frontend\"",
-    "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "start": "pnpm dev",
+    "build": "pnpm --filter @wikidata-slf/types build && pnpm --filter @wikidata-slf/backend build && pnpm --filter @wikidata-slf/frontend build",
+    "dev": "concurrently \"pnpm --filter @wikidata-slf/backend dev\" \"pnpm --filter @wikidata-slf/frontend dev\"",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
     "typescript": "^5.7.3"
   },
-  "overrides": {
-    "axios": "1.13.6"
+  "pnpm": {
+    "overrides": {
+      "axios": "1.13.6"
+    }
   }
 }

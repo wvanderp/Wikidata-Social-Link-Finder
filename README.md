@@ -4,35 +4,35 @@ A monorepo application that discovers social media profiles linked to a Wikidata
 
 Given a Wikidata QID (e.g. `Q42`), the tool:
 
-1. **Discovers candidate URLs** from the Wikidata item (URL claims, external IDs expanded via formatter URLs, sitelinks).
-2. **Crawls those pages** using Puppeteer (generation 1).
-3. **Extracts social profiles** from the fetched HTML using `social-profile-url-parser`.
-4. **Follows social-profile URLs** discovered in generation 1 (generation 2, social pages only).
-5. **Groups and ranks** profiles by the number of distinct pages mentioning them.
-6. **Returns structured results** with evidence showing exactly how each profile was found.
+1. **Discovers candidate URLs in the frontend** from the Wikidata item (URL claims, external IDs expanded via formatter URLs, sitelinks).
+2. **Keeps all crawl state in the frontend**: known URLs, queued URLs, in-flight URLs, finished URLs, failed URLs, seen counts, and per-URL sources.
+3. **Analyzes one page at a time through the backend** using Puppeteer.
+4. **Extracts social profiles** from fetched HTML using `social-profile-url-parser`.
+5. **Deduplicates generation 2 URLs against everything already seen**, so a URL first seen in generation 1 is not re-analyzed in generation 2.
+6. **Groups and ranks** profiles by the number of distinct pages mentioning them, with evidence showing exactly how each profile was found.
 
 ## Packages
 
 | Package | Description |
 |---------|-------------|
 | `packages/types` | Shared TypeScript domain types |
-| `packages/backend` | Express + TypeScript API server (Puppeteer crawl) |
-| `packages/frontend` | React + TypeScript UI (Vite) |
+| `packages/backend` | Express + TypeScript API server for page fetch and extraction |
+| `packages/frontend` | React + TypeScript UI (Vite), including Wikidata discovery, dedupe, and crawl state |
 
 ## Quick start
 
 ```bash
 # Install all workspace dependencies
-npm install
+pnpm install
 
 # Build all packages (types → backend → frontend)
-npm run build
+pnpm build
 
 # Start backend (port 3001)
-npm run start -w packages/backend
+pnpm --filter @wikidata-slf/backend start
 
 # In another terminal: start frontend dev server (port 5173, proxies /api to 3001)
-npm run dev -w packages/frontend
+pnpm --filter @wikidata-slf/frontend dev
 ```
 
 Then open `http://localhost:5173` and enter a QID.
@@ -43,46 +43,53 @@ Then open `http://localhost:5173` and enter a QID.
 
 Returns `{ status: "ok" }`.
 
-### `POST /api/analyze`
+### `POST /api/page/analyze`
 
-Body: `{ "qid": "Q42" }`
+Body: `{ "url": "https://example.org", "generation": 1 }`
 
-Runs the full crawl synchronously and returns an `AnalyzeResponse` JSON object.
+Fetches one page with Puppeteer and returns:
 
-### `GET /api/analyze/stream?qid=Q42`
-
-Server-Sent Events (SSE) endpoint. Emits:
-
-- `{ type: "page_fetch", page: PageFetchResult }` — after each page is fetched.
-- `{ type: "complete", result: AnalyzeResponse }` — when the crawl finishes.
-- `{ type: "error", message: string }` — on fatal errors.
+```json
+{
+  "page": {
+    "url": "https://example.org",
+    "finalUrl": "https://example.org/",
+    "status": "success",
+    "generation": 1,
+    "httpStatus": 200
+  },
+  "evidence": [
+    {
+      "profileUrl": "https://github.com/example",
+      "platformName": "GitHub",
+      "platformType": "P2037",
+      "username": "example",
+      "normalizedUsername": "example",
+      "sourcePageUrl": "https://example.org/",
+      "sourceKind": "page-html-gen1",
+      "generation": 1
+    }
+  ]
+}
+```
 
 ## Architecture
 
 ```
-Wikidata API
+Frontend
     │
-    ▼
-discoverCandidateUrls()   ← iwf (requestItem)
-    │                     ← formatterUrl (P1630 lookup for external IDs)
+    ├─ fetch Wikidata item and property metadata
+    ├─ build candidate URL list with source provenance
+    ├─ dedupe URLs across both generations
+    ├─ track seen counts and source lists per URL
+    ├─ schedule generation 1 then generation 2
+    └─ rank grouped social profiles
+                │
+                ▼
+Backend `/api/page/analyze`
     │
-    ▼ Generation 1 seed URLs
-fetchPages() via Puppeteer
-    │
-    ▼
-extractAndGroup()         ← social-profile-url-parser
-    │
-    ▼ Recognized social-profile URLs only
-fetchPages() via Puppeteer (Generation 2)
-    │
-    ▼
-extractAndGroup()
-    │
-    ▼
-rankProfiles()            ← by distinct-page mentions
-    │
-    ▼
-AnalyzeResponse
+    ├─ fetch page in Puppeteer
+    └─ extract social-profile evidence from HTML
 ```
 
 ## Crawl depth

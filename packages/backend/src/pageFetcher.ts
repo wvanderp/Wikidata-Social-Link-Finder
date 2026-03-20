@@ -8,6 +8,10 @@ const MAX_CONCURRENCY = 3;
 let browserInstance: Browser | null = null;
 let pendingCount = 0;
 
+export interface InternalPageFetchResult extends PageFetchResult {
+  html?: string;
+}
+
 async function getBrowser(): Promise<Browser> {
   if (!browserInstance || !browserInstance.connected) {
     browserInstance = await puppeteer.launch({
@@ -37,14 +41,14 @@ export async function closeBrowser(): Promise<void> {
 export async function fetchPage(
   url: string,
   generation: 1 | 2,
-): Promise<PageFetchResult> {
+): Promise<InternalPageFetchResult> {
   // Simple concurrency limiter – wait until a slot is free
   while (pendingCount >= MAX_CONCURRENCY) {
     await new Promise((r) => setTimeout(r, 200));
   }
   pendingCount++;
 
-  const result: PageFetchResult = {
+  const result: InternalPageFetchResult = {
     url,
     finalUrl: url,
     status: 'fetching',
@@ -101,21 +105,4 @@ export async function fetchPage(
   }
 
   return result;
-}
-
-/**
- * Fetch multiple URLs sequentially (callers manage concurrency).
- */
-export async function fetchPages(
-  urls: string[],
-  generation: 1 | 2,
-  onProgress?: (result: PageFetchResult) => void,
-): Promise<PageFetchResult[]> {
-  const results: PageFetchResult[] = [];
-  for (const url of urls) {
-    const r = await fetchPage(url, generation);
-    results.push(r);
-    onProgress?.(r);
-  }
-  return results;
 }

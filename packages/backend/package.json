@@ -11,7 +11,7 @@
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
-    "@wikidata-slf/types": "*",
+    "@wikidata-slf/types": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "iwf": "^3.0.3",

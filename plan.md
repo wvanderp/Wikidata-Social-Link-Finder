@@ -1,6 +1,6 @@
 ## Plan: Wikidata Social Link Finder
 
-Build a minimal npm-workspaces monorepo with a React + TypeScript frontend and a Node + TypeScript backend. The backend will use `iwf` to resolve a Wikidata QID into candidate URLs, use Wikidata formatter URLs to expand external IDs, fetch pages in Chrome via Puppeteer, extract social profiles with `social-profile-url-parser`, and return ranked results grouped by normalized profile with source-page evidence.
+Build a minimal pnpm-workspaces monorepo with a React + TypeScript frontend and a Node + TypeScript backend. The backend will use `iwf` to resolve a Wikidata QID into candidate URLs, use Wikidata formatter URLs to expand external IDs, fetch pages in Chrome via Puppeteer, extract social profiles with `social-profile-url-parser`, and return ranked results grouped by normalized profile with source-page evidence.
 
 The crawl is limited to two generations:
 

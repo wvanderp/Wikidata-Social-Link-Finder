@@ -2,6 +2,8 @@
  * Shared domain types for Wikidata Social Link Finder.
  */
 
+export type Generation = 1 | 2;
+
 // ---------------------------------------------------------------------------
 // Source metadata
 // ---------------------------------------------------------------------------
@@ -16,15 +18,61 @@ export type SourceKind =
   | 'page-html-gen2';
 
 // ---------------------------------------------------------------------------
-// Candidate URLs (generation 1 seeds from Wikidata)
+// URL discovery metadata
 // ---------------------------------------------------------------------------
+
+export interface UrlSource {
+  sourceKind: SourceKind;
+  generation: Generation;
+  /** The Wikidata property that originated this URL, if any (e.g. "P856"). */
+  propertyId?: string;
+  /** The page or entity URL from which this URL was discovered. */
+  sourceUrl?: string;
+}
 
 export interface CandidateUrl {
   url: string;
-  /** The Wikidata property that originated this URL, if any (e.g. "P856"). */
-  propertyId?: string;
-  sourceKind: SourceKind;
-  generation: 1 | 2;
+  source: UrlSource;
+}
+
+function truncateMalformedUrlTail(raw: string): string {
+  let end = raw.length;
+  const literalQuoteIndex = raw.indexOf('"');
+  if (literalQuoteIndex >= 0) {
+    end = Math.min(end, literalQuoteIndex);
+  }
+
+  const encodedQuoteMatch = /%22/i.exec(raw);
+  if (encodedQuoteMatch && encodedQuoteMatch.index >= 0) {
+    end = Math.min(end, encodedQuoteMatch.index);
+  }
+
+  return raw.slice(0, end).trim();
+}
+
+export function normalizeHttpUrl(raw: string | undefined | null): string | null {
+  if (!raw) {
+    return null;
+  }
+
+  const sanitized = truncateMalformedUrlTail(raw.trim());
+  if (!sanitized) {
+    return null;
+  }
+
+  try {
+    const url = new URL(sanitized);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+    url.hash = '';
+    if (url.pathname.length > 1) {
+      url.pathname = url.pathname.replace(/\/+$/, '');
+    }
+    return url.href;
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -40,9 +88,7 @@ export interface PageFetchResult {
   /** HTTP status code, undefined when fetch failed at network/timeout level. */
   httpStatus?: number;
   errorMessage?: string;
-  /** Raw HTML content after JS rendering. */
-  html?: string;
-  generation: 1 | 2;
+  generation: Generation;
 }
 
 // ---------------------------------------------------------------------------
@@ -58,10 +104,11 @@ export interface SocialProfileEvidence {
   platformType: string;
   /** Extracted username. */
   username: string;
+  normalizedUsername: string;
   /** The page from which this profile was extracted. */
   sourcePageUrl: string;
   sourceKind: SourceKind;
-  generation: 1 | 2;
+  generation: Generation;
 }
 
 // ---------------------------------------------------------------------------
@@ -86,23 +133,14 @@ export interface ProfileGroup {
 // API surface
 // ---------------------------------------------------------------------------
 
-/** Request body for POST /api/analyze */
-export interface AnalyzeRequest {
-  qid: string;
+/** Request body for POST /api/page/analyze */
+export interface PageAnalyzeRequest {
+  url: string;
+  generation: Generation;
 }
 
-/** Sent once the crawl is complete. */
-export interface AnalyzeResponse {
-  qid: string;
-  candidateUrls: CandidateUrl[];
-  pageResults: PageFetchResult[];
-  profiles: ProfileGroup[];
-  durationMs: number;
-  errors: string[];
-}
-
-/** Progress event pushed per fetched page (SSE or polling). */
-export interface ProgressEvent {
-  type: 'page_fetch';
+/** Response body for POST /api/page/analyze */
+export interface PageAnalyzeResponse {
   page: PageFetchResult;
+  evidence: SocialProfileEvidence[];
 }
